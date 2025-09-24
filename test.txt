@@ -1,0 +1,12 @@
+This is a test file for our steganography system!
+Created on: September 24, 2025
+
+This text will be:
+1. Encrypted with AES-256-CBC
+2. Hidden inside the logo.png image
+3. Extracted and decrypted back to verify it works
+
+Secret data: The quick brown fox jumps over the lazy dog.
+Special characters test: !@#$%^&*()_+-={}[]|\:";'<>?,./
+
+If you can read this after extraction, the system works perfectly!

@@ -1,0 +1,122 @@
+# PUT THIS .zshrc IN YOUR ROOT DIR
+# Steganography functions for our test ~/enc directory only
+stego() {
+    if [ $# -ne 3 ]; then
+        echo "Usage: stego <input_text_file> <carrier_image.png> <password>"
+        echo "Example: stego secret.txt image.png mypassword123"
+        echo "Note: All files must be in ~/enc/ directory"
+        return 1
+    fi
+    
+    local input_file="$1"
+    local carrier_image="$2"
+    local password="$3"
+    
+    # Check if we're in the enc directory
+    if [ "$(pwd)" != "$HOME/enc" ]; then
+        echo "Error: This command must be run from ~/enc/ directory"
+        echo "Please run: cd ~/enc"
+        return 1
+    fi
+    
+    # Check if files exist
+    if [ ! -f "$input_file" ]; then
+        echo "Error: Input file '$input_file' not found in ~/enc/"
+        return 1
+    fi
+    
+    if [ ! -f "$carrier_image" ]; then
+        echo "Error: Carrier image '$carrier_image' not found in ~/enc/"
+        return 1
+    fi
+    
+    local output_image="${carrier_image%.*}_hidden.png"
+    
+    # Create temporary encrypted file
+    local temp_encrypted=".temp_encrypted_$(date +%s).dat"
+    
+    # Encrypt the file
+    echo "Encrypting $input_file..."
+    openssl enc -aes-256-cbc -salt -in "$input_file" -out "$temp_encrypted" -pass pass:"$password" -pbkdf2
+    
+    if [ $? -ne 0 ]; then
+        echo "Error: Encryption failed"
+        rm -f "$temp_encrypted"
+        return 1
+    fi
+    
+    # Activate virtual environment and embed in image
+    echo "Embedding encrypted data in $carrier_image..."
+    source venv/bin/activate
+    python image_binary_insert.py "$carrier_image" "$temp_encrypted" "$output_image"
+    local embed_result=$?
+    deactivate
+    
+    # Clean up temporary file
+    rm -f "$temp_encrypted"
+    
+    if [ $embed_result -eq 0 ]; then
+        echo "Steganography complete! Output image: $output_image"
+    else
+        echo "Error: Failed to embed data in image"
+        return 1
+    fi
+}
+
+# Function to extract and decrypt hidden data
+unstego() {
+    if [ $# -ne 3 ]; then
+        echo "Usage: unstego <stego_image.png> <output_file.txt> <password>"
+        echo "Example: unstego image_hidden.png recovered.txt mypassword123"
+        echo "Note: All files must be in ~/enc/ directory"
+        return 1
+    fi
+    
+    local stego_image="$1"
+    local output_file="$2"
+    local password="$3"
+    
+    # Check if we're in the enc directory
+    if [ "$(pwd)" != "$HOME/enc" ]; then
+        echo "Error: This command must be run from ~/enc/ directory"
+        echo "Please run: cd ~/enc"
+        return 1
+    fi
+    
+    # Check if stego image exists
+    if [ ! -f "$stego_image" ]; then
+        echo "Error: Stego image '$stego_image' not found in ~/enc/"
+        return 1
+    fi
+    
+    local temp_extracted=".temp_extracted_$(date +%s).dat"
+    
+    # Extract encrypted data from image
+    echo "Extracting encrypted data from $stego_image..."
+    source venv/bin/activate
+    python image_binary_extract.py "$stego_image" "$temp_extracted"
+    local extract_result=$?
+    deactivate
+    
+    if [ $extract_result -ne 0 ]; then
+        echo "Error: Failed to extract data from image"
+        rm -f "$temp_extracted"
+        return 1
+    fi
+    
+    # Decrypt the extracted data
+    echo "Decrypting data..."
+    openssl enc -d -aes-256-cbc -in "$temp_extracted" -out "$output_file" -pass pass:"$password" -pbkdf2
+    local decrypt_result=$?
+    
+    # Clean up temporary file
+    rm -f "$temp_extracted"
+    
+    if [ $decrypt_result -eq 0 ]; then
+        echo "Extraction complete! Decrypted file: $output_file"
+    else
+        echo "Error: Failed to decrypt data. Wrong password?"
+        rm -f "$output_file"
+        return 1
+    fi
+}
