@@ -1,162 +1,157 @@
-# Steganography Encryption Tool
+# 🔐 Steganography Encryption Tool
 
-A command-line tool that combines AES-256-CBC encryption with LSB (Least Significant Bit) image steganography to securely hide encrypted data within PNG images.
+Combine military-grade AES-256 encryption with image steganography to securely hide any file or directory within PNG images.
 
-## Features
+## ✨ Features
 
-- **Strong Encryption**: Uses OpenSSL AES-256-CBC with PBKDF2 for secure encryption
-- **Image Steganography**: Hides encrypted data in the least significant bits of PNG images
-- **Simple CLI**: Easy-to-use command-line interface via zsh aliases
-- **Self-contained**: All operations confined to the `~/enc/` directory for security
+- **🔒 Strong Encryption** - AES-256-CBC with PBKDF2 key derivation
+- **🖼️ Image Steganography** - LSB (Least Significant Bit) embedding in PNG images
+- **📁 Universal File Support** - Hide any file type: documents, images, archives, or entire directories
+- **📦 Smart Compression** - Automatic compression for text and uncompressed formats
+- **📊 Capacity Calculator** - Check image requirements before hiding files
+- **🚀 Simple Commands** - Easy-to-use shell commands for all operations
 
-## Installation
+## 🔧 Quick Install
 
 ### Prerequisites
-
-- macOS (tested) or Linux
+- macOS or Linux with zsh
 - Python 3.x
-- zsh shell
-- OpenSSL (usually pre-installed)
+- Git
 
-### Setup
-
-1. Clone this repository to `~/enc/`:
+### One-Line Install
 ```bash
-cd ~
-git clone [repository-url] enc
-cd enc
+git clone [repository-url] ~/enc && cd ~/enc && ./setup.sh
 ```
 
-2. Create and activate Python virtual environment:
+### Manual Setup
 ```bash
+# 1. Clone and enter directory
+cd ~ && git clone [repository-url] enc && cd enc
+
+# 2. Set up Python environment
 python3 -m venv venv
 source venv/bin/activate
-```
+pip install pillow numpy
 
-3. Install required Python package:
-```bash
-pip install pillow
-```
-
-4. Make the Python scripts executable:
-```bash
-chmod +x image_binary_insert.py image_binary_extract.py
-```
-
-5. Add the shell functions to your `.zshrc`:
-```bash
-cat .zshrc.example >> ~/.zshrc
+# 3. Install shell functions
+cat stego_functions_simple.sh >> ~/.zshrc
 source ~/.zshrc
+
+# 4. Verify installation
+stego-info
 ```
 
-## Usage
+## 💻 Usage
 
-All commands must be run from the `~/enc/` directory:
+All commands run from `~/enc/` directory. Use `cd ~/enc` first.
 
+### 🆕 Enhanced Commands
+
+#### `stegox` - Hide Any File or Directory
+```bash
+stegox <input> <carrier.png> <password>
+```
+
+**Examples:**
+```bash
+stegox document.pdf photo.png "SecurePass123!"
+stegox project_folder/ image.png "FolderPass456"
+stegox archive.zip carrier.png "ZipPass789"
+```
+➜ Creates: `<carrier>_hidden.png`
+
+#### `unstegox` - Extract Hidden Files
+```bash
+unstegox <hidden.png> <password> [output_name]
+```
+
+**Examples:**
+```bash
+unstegox photo_hidden.png "SecurePass123!"              # Auto-detect name
+unstegox image_hidden.png "FolderPass456" my_project   # Custom name
+```
+
+#### `stego-capacity` - Check Image Size Requirements
+```bash
+stego-capacity <file_or_size>
+```
+
+**Examples:**
+```bash
+stego-capacity document.pdf    # Check specific file
+stego-capacity 10MB           # Check size requirement
+```
+
+### 📦 Classic Commands
+
+#### `stego` / `unstego` - Original text-focused tools
+```bash
+stego secret.txt carrier.png "password"              # Hide
+unstego carrier_hidden.png output.txt "password"     # Extract
+```
+
+## 🎯 How It Works
+
+1. **Encrypt** 🔒 - AES-256-CBC encryption with your password
+2. **Embed** 🖼️ - Hide encrypted data in image's least significant bits
+3. **Extract** 🔓 - Reverse the process to recover your files
+
+## 📂 Supported Formats
+
+- **Documents**: PDF, Word, text files, code files
+- **Media**: Images, videos, audio files
+- **Archives**: ZIP, TAR, compressed files
+- **Directories**: Entire folder structures
+- **Any file**: If it exists, you can hide it!
+
+## 📝 Examples
+
+### Quick Start
 ```bash
 cd ~/enc
+
+# Hide a PDF
+stegox secret.pdf photo.png "MyPassword123!"
+# Creates: photo_hidden.png
+
+# Extract it back
+unstegox photo_hidden.png "MyPassword123!"
+# Recovers: secret.pdf
 ```
 
-### Hiding Data (stego)
-
-To encrypt and hide a text file within an image:
-
+### Advanced Examples
 ```bash
-stego <input_file> <carrier_image.png> <password>
+# Hide entire directory
+stegox my_project/ vacation.png "ProjectPass456!"
+
+# Check if image is large enough
+stego-capacity large_file.zip
+
+# Extract with custom name
+unstegox vacation_hidden.png "ProjectPass456!" restored_project
 ```
 
-**Example:**
-```bash
-stego secret.txt image.png "myStr0ngP@ssw0rd!"
-```
+## ⚠️ Important Notes
 
-This will create `image_hidden.png` containing your encrypted data.
+- **Security**: Password strength = your security level
+- **Carrier Images**: PNG only, must be large enough
+- **Directory**: All operations in `~/enc/`
+- **Originals**: Not modified or deleted automatically
 
-### Extracting Data (unstego)
+## 🔧 Troubleshooting
 
-To extract and decrypt hidden data from an image:
+| Issue | Solution |
+|-------|----------|
+| Command not found | Run: `source ~/.zshrc` |
+| "Wrong directory" | Run: `cd ~/enc` |
+| "Image too small" | Use `stego-capacity` to check size |
+| "Wrong password?" | Check password, must be exact |
+| Python errors | Reinstall: `pip install pillow numpy` |
 
-```bash
-unstego <stego_image.png> <output_file> <password>
-```
+## 📝 License
 
-**Example:**
-```bash
-unstego image_hidden.png recovered.txt "myStr0ngP@ssw0rd!"
-```
+MIT License - Free to use and modify
 
-## How It Works
+## ⚠️ Disclaimer
 
-1. **Encryption**: Your input file is first encrypted using AES-256-CBC with your password
-2. **Embedding**: The encrypted data is then hidden in the least significant bits of the carrier image's RGB values
-3. **Size Header**: The file size is stored in the first 32 bits to ensure accurate extraction
-4. **Extraction**: The process reverses - data is extracted from the image and then decrypted
-
-## File Structure
-
-```
-~/enc/
-├── image_binary_insert.py    # Python script for embedding data
-├── image_binary_extract.py   # Python script for extracting data
-├── .zshrc.example           # Shell functions to add to ~/.zshrc
-├── venv/                    # Python virtual environment
-├── .gitignore              # Git ignore file (excludes venv)
-└── README.md               # This file
-```
-
-## Security Notes
-
-- All operations are confined to the `~/enc/` directory
-- Temporary files are automatically cleaned up
-- Use strong passwords - the security depends on your password strength
-- The steganography provides obscurity, not security - the encryption provides security
-- Original files are not modified
-
-## Limitations
-
-- Only works with PNG images (carrier and output)
-- Image must be large enough to hold the encrypted data (3 bits per pixel)
-- Maximum file size depends on carrier image dimensions
-
-## Example Workflow
-
-```bash
-# 1. Navigate to the enc directory
-cd ~/enc
-
-# 2. Place your secret file and a PNG image in the directory
-echo "This is my secret data" > mysecret.txt
-# (copy any PNG image to the directory)
-
-# 3. Hide the data
-stego mysecret.txt carrier.png "SuperSecretPassword123!"
-# Creates: carrier_hidden.png
-
-# 4. Delete the original files (optional)
-rm mysecret.txt
-
-# 5. Later, recover the data
-unstego carrier_hidden.png recovered.txt "SuperSecretPassword123!"
-
-# 6. Verify
-cat recovered.txt
-```
-
-## Troubleshooting
-
-- **"Error: This command must be run from ~/enc/ directory"**: Run `cd ~/enc` first
-- **"Image too small"**: Use a larger carrier image
-- **"Wrong password?"**: Ensure you're using the exact same password for extraction
-- **Command not found**: Run `source ~/.zshrc` or restart your terminal
-
-## Contributing
-
-Feel free to add your ideas to this repo for more open source compatibility!
-
-## License
-
-Free-Use!
-
-## Disclaimer
-
-This tool is for educational and legitimate privacy purposes only.
+For legitimate privacy and security purposes only. Users responsible for legal compliance.
